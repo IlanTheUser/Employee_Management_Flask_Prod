@@ -42,11 +42,11 @@ jobs:
         uses: hashicorp/setup-terraform@v1
      
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -reconfigure
      
       - name: Terraform Plan
         run: terraform plan -out=tfplan
      
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -auto-approve tfplan
+    #   - name: Terraform Apply
+    #     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    #     run: terraform apply -auto-approve tfplan
