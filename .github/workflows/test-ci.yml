@@ -45,7 +45,7 @@ jobs:
      
       - name: Initialize Terraform to Extract Variables
         id: init
-        working-directory: ./main
+        working-directory: ./terraform
         run: terraform init
       
       - name: Create backend.tf
@@ -61,7 +61,7 @@ jobs:
           EOF
       
       - name: Terraform init with backend
-        working-directory: ./main
+        working-directory: ./terraform
         run: terraform init
      
       - name: Terraform Plan
