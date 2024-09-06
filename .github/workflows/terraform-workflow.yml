@@ -88,34 +88,34 @@ jobs:
       if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
       run: terraform destroy -auto-approve 
 
-    - name: Get Terraform Outputs
-      if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-      id: terraform-outputs
-      run: |
-        echo "launch_template_id=$(terraform output -raw launch_template_id)" >> $GITHUB_OUTPUT
-        echo "ami_id=$(terraform output -raw ami_id)" >> $GITHUB_OUTPUT
-        echo "instance_type=$(terraform output -raw instance_type)" >> $GITHUB_OUTPUT
-        echo "asg_name=$(terraform output -raw asg_name)" >> $GITHUB_OUTPUT
+    # - name: Get Terraform Outputs
+    #   if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    #   id: terraform-outputs
+    #   run: |
+    #     echo "launch_template_id=$(terraform output -raw launch_template_id)" >> $GITHUB_OUTPUT
+    #     echo "ami_id=$(terraform output -raw ami_id)" >> $GITHUB_OUTPUT
+    #     echo "instance_type=$(terraform output -raw instance_type)" >> $GITHUB_OUTPUT
+    #     echo "asg_name=$(terraform output -raw asg_name)" >> $GITHUB_OUTPUT
 
-    - name: Update Launch Template
-      if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-      env:
-        LAUNCH_TEMPLATE_ID: ${{ steps.terraform-outputs.outputs.launch_template_id }}
-        AMI_ID: ${{ steps.terraform-outputs.outputs.ami_id }}
-        INSTANCE_TYPE: ${{ steps.terraform-outputs.outputs.instance_type }}
-        APP_VERSION: ${{ needs.build-and-push.outputs.image_tag }}
-      run: |
-        USER_DATA=$(sed "s/\${app_version}/$APP_VERSION/" userdata.sh | base64 -w 0)
-        aws ec2 create-launch-template-version \
-          --launch-template-id $LAUNCH_TEMPLATE_ID \
-          --source-version '$Latest' \
-          --launch-template-data "{\"ImageId\":\"$AMI_ID\",\"InstanceType\":\"$INSTANCE_TYPE\",\"UserData\":\"$USER_DATA\"}"
+    # - name: Update Launch Template
+    #   if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    #   env:
+    #     LAUNCH_TEMPLATE_ID: ${{ steps.terraform-outputs.outputs.launch_template_id }}
+    #     AMI_ID: ${{ steps.terraform-outputs.outputs.ami_id }}
+    #     INSTANCE_TYPE: ${{ steps.terraform-outputs.outputs.instance_type }}
+    #     APP_VERSION: ${{ needs.build-and-push.outputs.image_tag }}
+    #   run: |
+    #     USER_DATA=$(sed "s/\${app_version}/$APP_VERSION/" userdata.sh | base64 -w 0)
+    #     aws ec2 create-launch-template-version \
+    #       --launch-template-id $LAUNCH_TEMPLATE_ID \
+    #       --source-version '$Latest' \
+    #       --launch-template-data "{\"ImageId\":\"$AMI_ID\",\"InstanceType\":\"$INSTANCE_TYPE\",\"UserData\":\"$USER_DATA\"}"
 
-    - name: Start Instance Refresh
-      if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-      env:
-        ASG_NAME: ${{ steps.terraform-outputs.outputs.asg_name }}
-      run: |
-        aws autoscaling start-instance-refresh \
-          --auto-scaling-group-name $ASG_NAME \
-          --preferences '{"InstanceWarmup": 300, "MinHealthyPercentage": 90}'
+    # - name: Start Instance Refresh
+    #   if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    #   env:
+    #     ASG_NAME: ${{ steps.terraform-outputs.outputs.asg_name }}
+    #   run: |
+    #     aws autoscaling start-instance-refresh \
+    #       --auto-scaling-group-name $ASG_NAME \
+    #       --preferences '{"InstanceWarmup": 300, "MinHealthyPercentage": 90}'
