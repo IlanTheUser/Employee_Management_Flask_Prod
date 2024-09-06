@@ -80,9 +80,13 @@ jobs:
     - name: Terraform Plan
       run: terraform plan -var="app_version=${{ needs.build-and-push.outputs.image_tag }}" -out=tfplan
 
-    - name: Terraform Apply
+    # - name: Terraform Apply
+    #   if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    #   run: terraform apply -auto-approve tfplan
+
+    - name: Terraform Destroy
       if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-      run: terraform apply -auto-approve tfplan
+      run: terraform destroy -auto-approve 
 
     - name: Get Terraform Outputs
       if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
