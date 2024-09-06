@@ -17,3 +17,23 @@ output "deployment_timestamp" {
   description = "Timestamp of the latest deployment"
   value       = timestamp()
 }
+
+output "launch_template_id" {
+  description = "ID of the Launch Template"
+  value       = aws_launch_template.main.id
+}
+
+output "ami_id" {
+  description = "ID of the AMI used for EC2 instances"
+  value       = var.ami_id
+}
+
+output "instance_type" {
+  description = "Type of EC2 instances"
+  value       = var.instance_type
+}
+
+output "asg_name" {
+  description = "Name of the Auto Scaling Group"
+  value       = aws_autoscaling_group.main.name
+}
