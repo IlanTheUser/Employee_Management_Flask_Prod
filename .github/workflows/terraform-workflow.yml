@@ -12,7 +12,7 @@ on:
 env:
   DOCKER_HUB_REPO: simonjan2/employee_management_flask_test
   TF_VERSION: '1.0.0'
-  AWS_REGION: ${{ secrets.BACKEND_REGION }}
+  AWS_REGION: ${{ secrets.AWS_REGION }}
 
 jobs:
   build-and-push:
@@ -60,7 +60,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.BACKEND_REGION }}
+        aws-region: ${{ secrets.AWS_REGION }}
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
@@ -72,7 +72,7 @@ jobs:
         terraform init \
           -backend-config="bucket=${{ secrets.BUCKET_TF_STATE }}" \
           -backend-config="key=terraform/python-master-project.tfstate" \
-          -backend-config="region=${{ env.BACKEND_REGION }}"
+          -backend-config="region=${{ env.AWS_REGION }}"
 
     - name: Terraform Validate
       run: terraform validate
