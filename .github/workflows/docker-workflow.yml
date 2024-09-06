@@ -33,10 +33,10 @@ jobs:
         with:
           context: .
           push: true
-          tags: simonjan2/employee_management_flask_test:latest
+          tags: simonjan2/employee_management_flask_test:${{ github.sha }}
 
     outputs:
-      image_updated: ${{ steps.docker_build.outcome == 'success' }}
+      image_tag: ${{ github.sha }}
 
   trigger_terraform:
     needs: docker
@@ -47,4 +47,4 @@ jobs:
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
           event-type: docker-update
-          client-payload: '{"docker_updated": "true"}'
+          client-payload: '{"docker_tag": "${{ needs.docker.outputs.image_tag }}"}'

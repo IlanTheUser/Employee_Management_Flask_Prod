@@ -22,7 +22,18 @@ resource "aws_subnet" "main" {
   availability_zone       = var.availability_zone
 
   tags = {
-    Name = "${var.project_name}-subnet"
+    Name = "${var.project_name}-subnet-main"
+  }
+}
+
+resource "aws_subnet" "secondary" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = var.secondary_subnet_cidr
+  map_public_ip_on_launch = true
+  availability_zone       = var.secondary_availability_zone
+
+  tags = {
+    Name = "${var.project_name}-subnet-secondary"
   }
 }
 
@@ -44,33 +55,22 @@ resource "aws_route_table_association" "main" {
   route_table_id = aws_route_table.main.id
 }
 
+resource "aws_route_table_association" "secondary" {
+  subnet_id      = aws_subnet.secondary.id
+  route_table_id = aws_route_table.main.id
+}
+
 resource "aws_security_group" "main" {
   name        = "${var.project_name}-sg"
   description = "Allow inbound traffic"
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description = "SSH from anywhere"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    description = "HTTP from anywhere"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    description = "Flask from anywhere"
-    from_port   = 5000
-    to_port     = 5000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description     = "HTTP from ALB"
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
   }
 
   egress {
@@ -85,24 +85,103 @@ resource "aws_security_group" "main" {
   }
 }
 
-resource "aws_instance" "main" {
-  ami           = var.ami_id
-  instance_type = var.instance_type
+resource "aws_security_group" "alb" {
+  name        = "${var.project_name}-alb-sg"
+  description = "Security group for ALB"
+  vpc_id      = aws_vpc.main.id
 
-  vpc_security_group_ids = [aws_security_group.main.id]
-  subnet_id              = aws_subnet.main.id
-  # key_name               = var.key_name
-
-  user_data = templatefile("userdata.sh", {
-    app_version = var.app_version
-  })
-
-  tags = {
-    Name = "${var.project_name}-instance"
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
-  lifecycle {
-    create_before_destroy = true
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-alb-sg"
   }
 }
 
+resource "aws_lb" "main" {
+  name               = "${var.project_name}-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb.id]
+  subnets            = [aws_subnet.main.id, aws_subnet.secondary.id]
+
+  tags = {
+    Name = "${var.project_name}-alb"
+  }
+}
+
+resource "aws_lb_target_group" "main" {
+  name     = "${var.project_name}-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main.id
+
+  health_check {
+    path                = "/"
+    healthy_threshold   = 2
+    unhealthy_threshold = 10
+  }
+}
+
+resource "aws_lb_listener" "main" {
+  load_balancer_arn = aws_lb.main.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.main.arn
+  }
+}
+
+resource "aws_launch_template" "main" {
+  name_prefix   = "${var.project_name}-lt"
+  image_id      = var.ami_id
+  instance_type = var.instance_type
+
+  vpc_security_group_ids = [aws_security_group.main.id]
+
+  user_data = base64encode(templatefile("userdata.sh", {
+    app_version = var.app_version
+  }))
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name = "${var.project_name}-instance"
+    }
+  }
+}
+
+resource "aws_autoscaling_group" "main" {
+  name                = "${var.project_name}-asg"
+  vpc_zone_identifier = [aws_subnet.main.id, aws_subnet.secondary.id]
+  target_group_arns   = [aws_lb_target_group.main.arn]
+  health_check_type   = "ELB"
+
+  min_size         = 2
+  max_size         = 4
+  desired_capacity = 2
+
+  launch_template {
+    id      = aws_launch_template.main.id
+    version = "$Latest"
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "${var.project_name}-asg-instance"
+    propagate_at_launch = true
+  }
+}

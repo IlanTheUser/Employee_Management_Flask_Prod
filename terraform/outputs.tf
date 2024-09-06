@@ -1,16 +1,11 @@
-output "instance_public_ip" {
-  description = "Public IP address of the EC2 instance"
-  value       = aws_instance.main.public_ip
-}
-
-output "instance_public_dns" {
-  description = "Public DNS of the EC2 instance"
-  value       = aws_instance.main.public_dns
+output "alb_dns_name" {
+  description = "The DNS name of the load balancer"
+  value       = aws_lb.main.dns_name
 }
 
 output "application_url" {
   description = "URL to access the application"
-  value       = "http://${aws_instance.main.public_dns}"
+  value       = "http://${aws_lb.main.dns_name}"
 }
 
 output "app_version" {
