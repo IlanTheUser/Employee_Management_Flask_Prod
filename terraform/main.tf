@@ -88,14 +88,21 @@ resource "aws_security_group" "main" {
 resource "aws_instance" "main" {
   ami           = var.ami_id
   instance_type = var.instance_type
-  #key_name      = var.key_name
 
   vpc_security_group_ids = [aws_security_group.main.id]
   subnet_id              = aws_subnet.main.id
+  # key_name               = var.key_name
 
-  user_data = file("userdata.sh")
+  user_data = templatefile("userdata.sh", {
+    app_version = var.app_version
+  })
 
   tags = {
     Name = "${var.project_name}-instance"
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
+

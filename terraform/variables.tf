@@ -33,6 +33,12 @@ variable "instance_type" {
   type        = string
 }
 
+variable "app_version" {
+  description = "Version of the application to deploy"
+  type        = string
+  default     = "latest"
+}
+
 # variable "key_name" {
 #   description = "Name of the SSH key pair"
 #   type        = string
