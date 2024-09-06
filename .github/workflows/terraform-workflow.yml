@@ -73,12 +73,19 @@ jobs:
           -backend-config="key=${{ secrets.TF_STATE_KEY }}" \
           -backend-config="region=${{ secrets.BACKEND_REGION }}"
 
+    - name: Terraform Workspace
+      run: |
+        terraform workspace select ${{ github.ref_name }} || terraform workspace new ${{ github.ref_name }}
+
     - name: Terraform Validate
       run: terraform validate
 
     - name: Terraform Plan
       run: |
-        terraform plan -var="app_version=${{ needs.build-and-push.outputs.image_tag }}" -out=tfplan
+        terraform plan \
+          -var="app_version=${{ needs.build-and-push.outputs.image_tag }}" \
+          -var="terraform_workspace=${{ github.ref_name }}" \
+          -out=tfplan
         terraform show -no-color tfplan > tfplan.txt
 
     - name: Upload Terraform Plan

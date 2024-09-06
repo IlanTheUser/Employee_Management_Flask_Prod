@@ -48,3 +48,9 @@ variable "app_version" {
   type        = string
   default     = "latest"
 }
+
+variable "terraform_workspace" {
+  description = "Terraform workspace name"
+  type        = string
+  default     = "default"
+}

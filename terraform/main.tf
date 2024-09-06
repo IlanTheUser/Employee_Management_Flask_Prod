@@ -1,9 +1,13 @@
+locals {
+  resource_prefix = "${var.project_name}-${terraform.workspace}"
+}
+
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
 
   tags = {
-    Name = "${var.project_name}-vpc"
+    Name = "${local.resource_prefix}-vpc"
   }
 }
 
@@ -11,7 +15,7 @@ resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "${var.project_name}-igw"
+    Name = "${local.resource_prefix}-igw"
   }
 }
 
@@ -22,7 +26,7 @@ resource "aws_subnet" "main" {
   availability_zone       = var.availability_zone
 
   tags = {
-    Name = "${var.project_name}-subnet-main"
+    Name = "${local.resource_prefix}-subnet-main"
   }
 }
 
@@ -33,7 +37,7 @@ resource "aws_subnet" "secondary" {
   availability_zone       = var.secondary_availability_zone
 
   tags = {
-    Name = "${var.project_name}-subnet-secondary"
+    Name = "${local.resource_prefix}-subnet-secondary"
   }
 }
 
@@ -46,7 +50,7 @@ resource "aws_route_table" "main" {
   }
 
   tags = {
-    Name = "${var.project_name}-route-table"
+    Name = "${local.resource_prefix}-route-table"
   }
 }
 
@@ -61,7 +65,7 @@ resource "aws_route_table_association" "secondary" {
 }
 
 resource "aws_security_group" "main" {
-  name        = "${var.project_name}-sg"
+  name        = "${local.resource_prefix}-sg"
   description = "Allow inbound traffic"
   vpc_id      = aws_vpc.main.id
 
@@ -81,12 +85,12 @@ resource "aws_security_group" "main" {
   }
 
   tags = {
-    Name = "${var.project_name}-sg"
+    Name = "${local.resource_prefix}-sg"
   }
 }
 
 resource "aws_security_group" "alb" {
-  name        = "${var.project_name}-alb-sg"
+  name        = "${local.resource_prefix}-alb-sg"
   description = "Security group for ALB"
   vpc_id      = aws_vpc.main.id
 
@@ -105,24 +109,24 @@ resource "aws_security_group" "alb" {
   }
 
   tags = {
-    Name = "${var.project_name}-alb-sg"
+    Name = "${local.resource_prefix}-alb-sg"
   }
 }
 
 resource "aws_lb" "main" {
-  name               = "${var.project_name}-alb"
+  name               = "${local.resource_prefix}-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
   subnets            = [aws_subnet.main.id, aws_subnet.secondary.id]
 
   tags = {
-    Name = "${var.project_name}-alb"
+    Name = "${local.resource_prefix}-alb"
   }
 }
 
 resource "aws_lb_target_group" "main" {
-  name     = "${var.project_name}-tg"
+  name     = "${local.resource_prefix}-tg"
   port     = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.main.id
@@ -146,7 +150,7 @@ resource "aws_lb_listener" "main" {
 }
 
 resource "aws_launch_template" "main" {
-  name_prefix   = "${var.project_name}-lt"
+  name_prefix   = "${local.resource_prefix}-lt"
   image_id      = var.ami_id
   instance_type = var.instance_type
 
@@ -159,13 +163,13 @@ resource "aws_launch_template" "main" {
   tag_specifications {
     resource_type = "instance"
     tags = {
-      Name = "${var.project_name}-instance"
+      Name = "${local.resource_prefix}-instance"
     }
   }
 }
 
 resource "aws_autoscaling_group" "main" {
-  name                = "${var.project_name}-asg"
+  name                = "${local.resource_prefix}-asg"
   vpc_zone_identifier = [aws_subnet.main.id, aws_subnet.secondary.id]
   target_group_arns   = [aws_lb_target_group.main.arn]
   health_check_type   = "ELB"
@@ -181,7 +185,7 @@ resource "aws_autoscaling_group" "main" {
 
   tag {
     key                 = "Name"
-    value               = "${var.project_name}-asg-instance"
+    value               = "${local.resource_prefix}-asg-instance"
     propagate_at_launch = true
   }
 }
