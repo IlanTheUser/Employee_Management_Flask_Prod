@@ -28,12 +28,18 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Get app version from terraform.tfvars
+        id: get_version
+        run: |
+          APP_VERSION=$(grep 'app_version' terraform/terraform.tfvars | awk -F '"' '{print $2}')
+          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_OUTPUT
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: simonjan2/employee_management_flask_test:latest
+          tags: simonjan2/employee_management_flask_test:${{ steps.get_version.outputs.APP_VERSION }}
 
     outputs:
       image_updated: ${{ steps.docker_build.outcome == 'success' }}
