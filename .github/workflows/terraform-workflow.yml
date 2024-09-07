@@ -1,131 +1,62 @@
-name: CI/CD Pipeline
+name: Terraform Apply
 
 on:
   push:
     branches:
       - main
+    paths:
+      - 'terraform/**'
   pull_request:
     branches:
       - main
-  workflow_dispatch:
-
-env:
-  DOCKER_HUB_REPO: simonjan2/employee_management_flask_test
-  TF_VERSION: '1.0.0'
+    paths:
+      - 'terraform/**'
+  repository_dispatch:
+    types: [docker-update]
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    outputs:
-      image_tag: ${{ steps.build-image.outputs.image_tag }}
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-
-    - name: Login to Docker Hub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-    - name: Build and push Docker image
-      id: build-image
-      uses: docker/build-push-action@v4
-      with:
-        context: .
-        push: true
-        tags: ${{ env.DOCKER_HUB_REPO }}:${{ github.sha }}
-
-    - name: Output image tag
-      run: echo "image_tag=${{ github.sha }}" >> $GITHUB_OUTPUT
-
-  terraform-apply:
-    needs: build-and-push
+  terraform:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./terraform
-
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE }}
+      AWS_REGION: ${{ secrets.BACKEND_REGION }}
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_version: ${{ env.TF_VERSION }}
+      - name: Create backend.tf
+        run: |
+          cat <<EOF > backend.tf
+          terraform {
+            backend "s3" {
+              bucket = "${{ secrets.BUCKET_TF_STATE }}"
+              key    = "terraform/python-master-project.tfstate"
+              region = "${{ secrets.BACKEND_REGION }}"
+            }
+          }
+          EOF
 
-    - name: Terraform Init
-      run: |
-        terraform init \
-          -backend-config="bucket=${{ secrets.BUCKET_TF_STATE }}" \
-          -backend-config="key=${{ secrets.TF_STATE_KEY }}" \
-          -backend-config="region=${{ secrets.BACKEND_REGION }}"
+      - name: Terraform Init
+        run: terraform init
 
-    - name: Terraform Workspace
-      run: |
-        terraform workspace select ${{ github.ref_name }} || terraform workspace new ${{ github.ref_name }}
+      - name: Terraform Validate
+        run: terraform validate
 
-    - name: Terraform Validate
-      run: terraform validate
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
 
-    - name: Terraform Plan
-      run: |
-        terraform plan \
-          -var="app_version=${{ needs.build-and-push.outputs.image_tag }}" \
-          -var="terraform_workspace=${{ github.ref_name }}" \
-          -out=tfplan
-        terraform show -no-color tfplan > tfplan.txt
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'repository_dispatch')
+        run: terraform apply -auto-approve tfplan
 
-    - name: Upload Terraform Plan
-      uses: actions/upload-artifact@v2
-      with:
-        name: tfplan
-        path: tfplan.txt
-
-    - name: Terraform Apply
-      if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-      run: terraform apply -auto-approve tfplan
-
-    - name: Get Terraform Outputs
-      if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-      id: terraform-outputs
-      run: |
-        echo "launch_template_id=$(terraform output -raw launch_template_id)" >> $GITHUB_OUTPUT
-        echo "ami_id=$(terraform output -raw ami_id)" >> $GITHUB_OUTPUT
-        echo "instance_type=$(terraform output -raw instance_type)" >> $GITHUB_OUTPUT
-        echo "asg_name=$(terraform output -raw asg_name)" >> $GITHUB_OUTPUT
-
-    - name: Update Launch Template
-      if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-      env:
-        LAUNCH_TEMPLATE_ID: ${{ steps.terraform-outputs.outputs.launch_template_id }}
-        AMI_ID: ${{ steps.terraform-outputs.outputs.ami_id }}
-        INSTANCE_TYPE: ${{ steps.terraform-outputs.outputs.instance_type }}
-        APP_VERSION: ${{ needs.build-and-push.outputs.image_tag }}
-      run: |
-        USER_DATA=$(sed "s/\${app_version}/$APP_VERSION/" userdata.sh | base64 -w 0)
-        aws ec2 create-launch-template-version \
-          --launch-template-id $LAUNCH_TEMPLATE_ID \
-          --source-version '$Latest' \
-          --launch-template-data "{\"ImageId\":\"$AMI_ID\",\"InstanceType\":\"$INSTANCE_TYPE\",\"UserData\":\"$USER_DATA\"}"
-
-    - name: Start Instance Refresh
-      if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-      env:
-        ASG_NAME: ${{ steps.terraform-outputs.outputs.asg_name }}
-      run: |
-        aws autoscaling start-instance-refresh \
-          --auto-scaling-group-name $ASG_NAME \
-          --preferences '{"InstanceWarmup": 300, "MinHealthyPercentage": 90}'
+    #   - name: Terraform Destroy
+    #     if: github.ref == 'refs/heads/main' && github.event_name == 'repository_dispatch'
+    #     run: terraform destroy -auto-approve

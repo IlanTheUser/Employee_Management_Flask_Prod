@@ -14,22 +14,12 @@ variable "vpc_cidr" {
 }
 
 variable "subnet_cidr" {
-  description = "CIDR block for the main subnet"
-  type        = string
-}
-
-variable "secondary_subnet_cidr" {
-  description = "CIDR block for the secondary subnet"
+  description = "CIDR block for the subnet"
   type        = string
 }
 
 variable "availability_zone" {
-  description = "Availability Zone for the main subnet"
-  type        = string
-}
-
-variable "secondary_availability_zone" {
-  description = "Availability Zone for the secondary subnet"
+  description = "Availability Zone for the subnet"
   type        = string
 }
 
@@ -49,8 +39,7 @@ variable "app_version" {
   default     = "latest"
 }
 
-variable "terraform_workspace" {
-  description = "Terraform workspace name"
-  type        = string
-  default     = "default"
-}
+# variable "key_name" {
+#   description = "Name of the SSH key pair"
+#   type        = string
+# }
