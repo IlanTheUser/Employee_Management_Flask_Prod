@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
     mariadb-server \
     mariadb-client \
     netcat \
+    awscli \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up MariaDB directories
@@ -13,6 +14,8 @@ RUN mkdir -p /var/run/mysqld /var/lib/mysql \
     && chmod 777 /var/run/mysqld
 
 WORKDIR /app
+
+ENV PROJECT_NAME=${PROJECT_NAME}
 
 # Copy and install Python dependencies
 COPY requirements.txt requirements.txt

@@ -2,9 +2,10 @@
 
 echo "Starting entrypoint script..."
 
-# Start MariaDB using mysqld_safe
-echo "Starting MariaDB..."
-mysqld_safe &
+export PROJECT_NAME=${PROJECT_NAME}
+
+# Start MariaDB using the new data directory
+mysqld_safe --datadir=/mnt/mysql-data &
 
 # Wait for MariaDB to be ready
 echo "Waiting for MariaDB..."
