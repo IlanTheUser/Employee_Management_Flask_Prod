@@ -38,13 +38,13 @@ jobs:
     outputs:
       image_updated: ${{ steps.docker_build.outcome == 'success' }}
 
-  # trigger_terraform:
-  #   needs: docker
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Trigger Terraform workflow
-  #       uses: peter-evans/repository-dispatch@v2
-  #       with:
-  #         token: ${{ secrets.REPO_ACCESS_TOKEN }}
-  #         event-type: docker-update
-  #         client-payload: '{"docker_updated": "true"}'
+  trigger_terraform:
+    needs: docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Terraform workflow
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          event-type: docker-update
+          client-payload: '{"docker_updated": "true"}'
