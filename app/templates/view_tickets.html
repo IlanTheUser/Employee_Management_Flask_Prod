@@ -2,7 +2,7 @@
 
 {% block content %}
 <h1 class="mb-4">Tickets</h1>
-{% if current_user.is_admin %}
+{% if is_admin %}
     <h2 class="mb-3">All Tickets</h2>
 {% else %}
     <h2 class="mb-3">Your Tickets</h2>
@@ -15,14 +15,19 @@
                 <th>Type</th>
                 <th>Status</th>
                 <th>Created At</th>
-                {% if current_user.is_admin %}
+                {% if is_admin %}
                     <th>Created By</th>
                 {% endif %}
                 <th>Action</th>
             </tr>
         </thead>
         <tbody>
-            {% for ticket in tickets %}
+            {% for ticket_data in tickets %}
+                {% if is_admin %}
+                    {% set ticket = ticket_data[0] %}
+                {% else %}
+                    {% set ticket = ticket_data %}
+                {% endif %}
                 <tr>
                     <td>{{ ticket.title }}</td>
                     <td>{{ ticket.ticket_type }}</td>
@@ -32,8 +37,8 @@
                         </span>
                     </td>
                     <td>{{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    {% if current_user.is_admin %}
-                        <td>{{ ticket.employee_name }} ({{ ticket.username }})</td>
+                    {% if is_admin %}
+                        <td>{{ ticket_data.employee_name }} ({{ ticket_data.username }})</td>
                     {% endif %}
                     <td>
                         <a href="{{ url_for('main.ticket_detail', ticket_id=ticket.id) }}" class="btn btn-info btn-sm">View</a>
@@ -43,7 +48,7 @@
         </tbody>
     </table>
 </div>
-{% if not current_user.is_admin %}
+{% if not is_admin %}
     <a href="{{ url_for('main.create_ticket') }}" class="btn btn-primary mt-3">Create New Ticket</a>
 {% endif %}
 {% endblock %}
