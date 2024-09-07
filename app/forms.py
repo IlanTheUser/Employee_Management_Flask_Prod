@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, IntegerField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, IntegerField, TextAreaField, SelectField
 from wtforms.validators import DataRequired, Email, EqualTo, ValidationError
 from flask_wtf.file import FileField, FileAllowed
 from app.models import User
@@ -25,3 +25,15 @@ class EmployeeForm(FlaskForm):
     role = StringField('Role', validators=[DataRequired()])
     picture = FileField('Picture', validators=[FileAllowed(['jpg', 'png', 'jpeg'])])
     submit = SubmitField('Add Employee')
+
+class TicketForm(FlaskForm):
+    title = StringField('Title', validators=[DataRequired()])
+    description = TextAreaField('Description', validators=[DataRequired()])
+    ticket_type = SelectField('Type', choices=[('Request', 'Request'), ('Issue', 'Issue')], validators=[DataRequired()])
+    submit = SubmitField('Submit Ticket')
+
+class TicketResponseForm(FlaskForm):
+    admin_response = TextAreaField('Response', validators=[DataRequired()])
+    status = SelectField('Status', choices=[('Open', 'Open'), ('In Progress', 'In Progress'), ('Closed', 'Closed')], validators=[DataRequired()])
+    is_approved = SelectField('Approval', choices=[('None', 'Pending'), ('True', 'Approved'), ('False', 'Disapproved')], validators=[DataRequired()])
+    submit = SubmitField('Submit Response')

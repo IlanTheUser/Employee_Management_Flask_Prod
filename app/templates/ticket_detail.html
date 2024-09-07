@@ -1,0 +1,61 @@
+<!-- app/templates/ticket_detail.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h1 class="mb-4">Ticket Details</h1>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">{{ ticket.title }}</h5>
+            </div>
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">{{ ticket.ticket_type }} - 
+                    <span class="badge badge-{{ 'primary' if ticket.status == 'Open' else 'warning' if ticket.status == 'In Progress' else 'success' }}">
+                        {{ ticket.status }}
+                    </span>
+                </h6>
+                <p class="card-text">{{ ticket.description }}</p>
+                <p class="card-text"><small class="text-muted">Created on {{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</small></p>
+                
+                {% if ticket.admin_response %}
+                    <h5 class="mt-4">Admin Response:</h5>
+                    <p>{{ ticket.admin_response }}</p>
+                    <p>
+                        Approval Status: 
+                        <span class="badge badge-{{ 'success' if ticket.is_approved == True else 'danger' if ticket.is_approved == False else 'warning' }}">
+                            {{ 'Approved' if ticket.is_approved == True else 'Disapproved' if ticket.is_approved == False else 'Pending' }}
+                        </span>
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if current_user.is_admin %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Respond to Ticket</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="">
+                        {{ form.hidden_tag() }}
+                        <div class="form-group">
+                            {{ form.admin_response.label(class="form-label") }}
+                            {{ form.admin_response(class="form-control", rows="5") }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.status.label(class="form-label") }}
+                            {{ form.status(class="form-control") }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.is_approved.label(class="form-label") }}
+                            {{ form.is_approved(class="form-control") }}
+                        </div>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

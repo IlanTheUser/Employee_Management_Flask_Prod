@@ -1,6 +1,7 @@
 from app import db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -26,3 +27,19 @@ class Employee(db.Model):
     picture = db.Column(db.String(200))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref=db.backref('employee', uselist=False))
+
+class Ticket(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), default='Open')  # Open, In Progress, Closed
+    ticket_type = db.Column(db.String(20), nullable=False)  # Request, Issue, etc.
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)
+    employee = db.relationship('Employee', backref=db.backref('tickets', lazy=True))
+    admin_response = db.Column(db.Text)
+    is_approved = db.Column(db.Boolean, default=None)
+
+    def __repr__(self):
+        return f'<Ticket {self.id}: {self.title}>'

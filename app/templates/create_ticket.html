@@ -1,0 +1,32 @@
+<!-- app/templates/create_ticket.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h1 class="card-title">Create New Ticket</h1>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="">
+                    {{ form.hidden_tag() }}
+                    <div class="form-group">
+                        {{ form.title.label(class="form-label") }}
+                        {{ form.title(class="form-control") }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control", rows="5") }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.ticket_type.label(class="form-label") }}
+                        {{ form.ticket_type(class="form-control") }}
+                    </div>
+                    {{ form.submit(class="btn btn-primary") }}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
