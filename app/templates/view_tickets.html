@@ -24,7 +24,7 @@
         <tbody>
             {% for ticket_data in tickets %}
                 {% if is_admin %}
-                    {% set ticket = ticket_data[0] %}
+                    {% set ticket = ticket_data.Ticket %}
                 {% else %}
                     {% set ticket = ticket_data %}
                 {% endif %}

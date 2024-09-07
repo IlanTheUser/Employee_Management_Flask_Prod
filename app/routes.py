@@ -162,7 +162,9 @@ def view_tickets():
             Ticket,
             Employee.full_name.label('employee_name'),
             User.username.label('username')
-        ).join(Employee).join(User).all()
+        ).join(Employee, Ticket.employee_id == Employee.id)\
+         .join(User, Employee.user_id == User.id)\
+         .all()
     else:
         # For regular users, fetch only their tickets
         if current_user.employee:
