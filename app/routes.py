@@ -135,6 +135,10 @@ def benefits():
 @main.route('/create_ticket', methods=['GET', 'POST'])
 @login_required
 def create_ticket():
+    if not hasattr(current_user, 'employee') or not current_user.employee:
+        flash('You do not have an associated employee record. Please contact an administrator.', 'warning')
+        return redirect(url_for('main.index'))
+
     form = TicketForm()
     if form.validate_on_submit():
         ticket = Ticket(
@@ -155,7 +159,11 @@ def view_tickets():
     if current_user.is_admin:
         tickets = Ticket.query.all()
     else:
-        tickets = Ticket.query.filter_by(employee_id=current_user.employee.id).all()
+        if hasattr(current_user, 'employee') and current_user.employee:
+            tickets = Ticket.query.filter_by(employee_id=current_user.employee.id).all()
+        else:
+            flash('You do not have an associated employee record. Please contact an administrator.', 'warning')
+            tickets = []
     return render_template('view_tickets.html', title='View Tickets', tickets=tickets)
 
 @main.route('/ticket/<int:ticket_id>', methods=['GET', 'POST'])
