@@ -157,13 +157,20 @@ def create_ticket():
 @login_required
 def view_tickets():
     if current_user.is_admin:
-        tickets = Ticket.query.all()
+        # For admins, fetch all tickets with user and employee information
+        tickets = Ticket.query.join(Employee).join(User).with_entities(
+            Ticket,
+            Employee.full_name.label('employee_name'),
+            User.username.label('username')
+        ).all()
     else:
-        if hasattr(current_user, 'employee') and current_user.employee:
+        # For regular users, fetch only their tickets
+        if current_user.employee:
             tickets = Ticket.query.filter_by(employee_id=current_user.employee.id).all()
         else:
             flash('You do not have an associated employee record. Please contact an administrator.', 'warning')
             tickets = []
+    
     return render_template('view_tickets.html', title='View Tickets', tickets=tickets)
 
 @main.route('/ticket/<int:ticket_id>', methods=['GET', 'POST'])
