@@ -9,13 +9,11 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up MariaDB directories
-RUN mkdir -p /var/run/mysqld /var/lib/mysql \
-    && chown -R mysql:mysql /var/run/mysqld /var/lib/mysql \
-    && chmod 777 /var/run/mysqld
+RUN mkdir -p /var/run/mysqld /var/lib/mysql /mnt/mysql-data \
+    && chown -R mysql:mysql /var/run/mysqld /var/lib/mysql /mnt/mysql-data \
+    && chmod 777 /var/run/mysqld /mnt/mysql-data
 
 WORKDIR /app
-
-ENV PROJECT_NAME=${PROJECT_NAME}
 
 # Copy and install Python dependencies
 COPY requirements.txt requirements.txt
@@ -29,6 +27,8 @@ RUN chmod +x entrypoint.sh
 
 # Expose port 5000 for the Flask app
 EXPOSE 5000
+
+ENV PROJECT_NAME=${PROJECT_NAME}
 
 # Use the entrypoint script
 CMD ["/bin/bash", "entrypoint.sh"]
