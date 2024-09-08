@@ -8,29 +8,8 @@ from app.models import User, Employee
 from app.forms import LoginForm, RegistrationForm, EmployeeForm
 from app.models import Ticket
 from app.forms import TicketForm, TicketResponseForm
-import boto3
-from botocore.exceptions import ClientError
 
 main = Blueprint('main', __name__)
-
-s3_client = boto3.client('s3')
-BUCKET_NAME = f"{os.environ.get('PROJECT_NAME')}-uploads" # Replace with your actual bucket name
-
-def upload_file_to_s3(file, acl="public-read"):
-    try:
-        s3_client.upload_fileobj(
-            file,
-            BUCKET_NAME,
-            file.filename,
-            ExtraArgs={
-                "ACL": acl,
-                "ContentType": file.content_type
-            }
-        )
-    except ClientError as e:
-        print("Error", e)
-        return None
-    return f"https://{BUCKET_NAME}.s3.amazonaws.com/{file.filename}"
 
 @main.route('/')
 def index():
@@ -96,10 +75,10 @@ def employee_profile(id):
 def add_employee():
     form = EmployeeForm()
     if form.validate_on_submit():
+        filename = None
         if form.picture.data:
-            picture_url = upload_file_to_s3(form.picture.data)
-        else:
-            picture_url = None
+            filename = secure_filename(form.picture.data.filename)
+            form.picture.data.save(os.path.join('app', 'static', 'uploads', filename))
         
         employee = Employee(
             full_name=form.full_name.data,
@@ -107,7 +86,7 @@ def add_employee():
             phone_number=form.phone_number.data,
             email=form.email.data,
             role=form.role.data,
-            picture=picture_url,
+            picture=filename,
             user_id=current_user.id
         )
         db.session.add(employee)
