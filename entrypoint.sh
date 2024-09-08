@@ -30,3 +30,4 @@ echo "Database initialized!"
 # Start the Flask application
 echo "Starting Flask application..."
 flask run --host=0.0.0.0
+#
