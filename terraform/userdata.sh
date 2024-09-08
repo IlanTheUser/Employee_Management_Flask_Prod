@@ -12,7 +12,7 @@ sudo chkconfig docker on
 
 # Pull and run the Docker image
 # Replace 'your-image:tag' with the actual image name and tag from Docker Hub
-sudo docker pull simonjan2/employee_management_flask_test:${app_version}
+sudo docker pull dckrilan/employee_management_flask_test:${app_version}
 sudo docker run -d -p 80:5000 dckrilan/employee_management_flask_test:${app_version}
 
 
