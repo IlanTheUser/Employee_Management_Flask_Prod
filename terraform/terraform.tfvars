@@ -5,7 +5,7 @@ subnet_cidr       = "10.0.1.0/24"
 availability_zone = "us-east-1a"
 ami_id            = "ami-066784287e358dad1"  # Amazon Linux 2 AMI (HVM), SSD Volume Type
 instance_type     = "t2.micro"
-app_version       = "v1.0.7" # 
+app_version       = "v1.0.1" # 
 #key_name          = "your-key-pair-name"  # Replace with your actual key pair name
 
 # whenever you want to deploy a new version of your application:
