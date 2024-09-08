@@ -3,12 +3,12 @@ name: Docker Build and Push
 on:
   push:
     branches:
-      - main
+      - test-branch
     paths-ignore:
       - 'terraform/**'
   pull_request:
     branches:
-      - main
+      - test-branch
     paths-ignore:
       - 'terraform/**'
 
