@@ -43,3 +43,36 @@ variable "app_version" {
 #   description = "Name of the SSH key pair"
 #   type        = string
 # }
+
+
+
+##### DB variables
+
+variable "db_instance_type" {
+  description = "Instance type for the MariaDB server"
+  type        = string
+  default     = "t2.micro"
+}
+
+variable "db_name" {
+  description = "Name of the database"
+  type        = string
+  default     = "employee_management"
+}
+
+variable "db_username" {
+  description = "username for the database user"
+  type        = string
+  default     = "user"
+}
+
+variable "db_password" {
+  description = "Password for the database user"
+  type        = string
+  default     = "password"
+}
+
+variable "elastic_ip_id" {
+  description = "The allocation ID of the Elastic IP to associate with the MariaDB instance"
+  type        = string
+}

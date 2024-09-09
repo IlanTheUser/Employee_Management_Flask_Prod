@@ -1,3 +1,11 @@
+# terraform {
+#   backend "s3" {
+#     bucket = "ilan-terraform-bucket"
+#     key    = "terraform/python-master-project.tfstate"
+#     region = "us-east-1" # replace with your preferred region
+#   }
+# }
+
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
@@ -61,6 +69,14 @@ resource "aws_security_group" "main" {
     description = "HTTP from anywhere"
     from_port   = 80
     to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "talk to mysql"
+    from_port   = 3306
+    to_port     = 3306
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
